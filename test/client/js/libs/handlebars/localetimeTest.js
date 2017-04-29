@@ -14,6 +14,6 @@ describe("localetime Handlebars helper", () => {
 		// Pretend local timezone is UTC by moving the clock of that offset
 		const time = date.getTime() + offset;
 
-		expect(localetime(time)).to.equal("5/22/2014, 12:00:00 PM");
+		expect(localetime(time)).to.equal("May 22, 2014 – 12:00:00");
 	});
 });
