@@ -27,6 +27,9 @@ const options = $.extend({
 
 module.exports = options;
 
+let socket;
+module.exports.setSocket = s => socket = s;
+
 for (var i in options) {
 	if (i === "userStyles") {
 		if (!/[?&]nocss/.test(window.location.search)) {
@@ -87,6 +90,35 @@ settings.on("change", "input, select, textarea", function() {
 $("#desktopNotifications").on("change", function() {
 	if ($(this).prop("checked") && Notification.permission !== "granted") {
 		Notification.requestPermission(updateDesktopNotificationStatus);
+	}
+
+	if ($(this).prop("checked") && "serviceWorker" in navigator) {
+		navigator.serviceWorker.register("service-worker.js").then(registration => {
+			return registration.pushManager.getSubscription().then(subscription => {
+				if (subscription) {
+					return subscription;
+				}
+
+				return registration.pushManager.subscribe({
+					userVisibleOnly: true
+				});
+			});
+		}).then(subscription => {
+			const rawKey = subscription.getKey ? subscription.getKey("p256dh") : "";
+			const key = rawKey ? btoa(String.fromCharCode.apply(null, new Uint8Array(rawKey))) : "";
+			const rawAuthSecret = subscription.getKey ? subscription.getKey("auth") : "";
+			const authSecret = rawAuthSecret ? btoa(String.fromCharCode.apply(null, new Uint8Array(rawAuthSecret))) : "";
+
+			alert("Service worker & push subscription registered");
+
+			socket.emit("push:register", {
+				endpoint: subscription.endpoint,
+				key: key,
+				authSecret: authSecret,
+			});
+		});
+	} else {
+		// TODO: Allow unsubscribing
 	}
 });
 

@@ -75,6 +75,7 @@ function Client(manager, name, config) {
 		id: id++,
 		name: name,
 		networks: [],
+		pushSubscriptions: [],
 		sockets: manager.sockets,
 		manager: manager
 	});
@@ -530,6 +531,36 @@ Client.prototype.clientDetach = function(socketId) {
 				network.irc.raw("AWAY", client.awayMessage);
 			}
 		});
+	}
+};
+
+Client.prototype.registerPushSubscription = function(subscription) {
+	if (!_.isPlainObject(subscription)) {
+		return;
+	}
+
+	if (typeof subscription.endpoint !== "string" || !/^https?:\/\//.test(subscription.endpoint)) {
+		return;
+	}
+
+	if (typeof subscription.key !== "string" || typeof subscription.authSecret !== "string") {
+		return;
+	}
+
+	this.pushSubscriptions.push({
+		endpoint: subscription.endpoint,
+		keys: {
+			p256dh: subscription.key,
+			auth: subscription.authSecret
+		}
+	});
+};
+
+Client.prototype.unregisterPushSubscription = function(endpoint) {
+	const index = this.pushSubscriptions.indexOf(endpoint);
+
+	if (index > -1) {
+		this.pushSubscriptions.splice(index, 1);
 	}
 };
 

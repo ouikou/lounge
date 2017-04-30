@@ -3,6 +3,9 @@
 const Chan = require("../../models/chan");
 const Msg = require("../../models/msg");
 const LinkPrefetch = require("./link");
+const WebPush = require("web-push");
+
+WebPush.setGCMAPIKey("TODO config");
 
 module.exports = function(irc, network) {
 	var client = this;
@@ -94,6 +97,25 @@ module.exports = function(irc, network) {
 		// No prefetch URLs unless are simple MESSAGE or ACTION types
 		if ([Msg.Type.MESSAGE, Msg.Type.ACTION].indexOf(data.type) !== -1) {
 			LinkPrefetch(client, chan, msg);
+		}
+
+		if (highlight && client.pushSubscriptions.length) {
+			const cleanMessage = data.message.replace(/\x03(?:[0-9]{1,2}(?:,[0-9]{1,2})?)?|[\x00-\x1F]|\x7F/g, "").trim();
+
+			let title = data.nick;
+
+			if (chan.type !== Chan.Type.QUERY) {
+				title += ` (${chan.name})`;
+			}
+
+			title += " mentioned you: ";
+
+			client.pushSubscriptions.forEach(subscription => {
+				WebPush.sendNotification(subscription, title + cleanMessage)
+					.catch(error => {
+						log.error("WebPush Error", error);
+					});
+			});
 		}
 	}
 };

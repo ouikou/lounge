@@ -607,6 +607,7 @@ $(function() {
 	socket.on("names", renderChannelUsers);
 
 	var options = require("./options");
+	options.setSocket(socket);
 
 	var windows = $("#windows");
 
